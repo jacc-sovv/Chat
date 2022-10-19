@@ -5,17 +5,16 @@
 #include <sys/socket.h>
 #include <unistd.h>
 #include <arpa/inet.h>
-#define PORT 8080
+#define PORT 8090
 
 using namespace std;
 
 int server(){
-//printf("in server\n");
     int server_fd, new_socket, valread;
     struct sockaddr_in cli_addr;
     int opt = 1;
     int addrlen = sizeof(cli_addr);
-    char buffer[1024];
+    char buffer[1024] = {0};
     char* hello = "Hello from server";
 
 
@@ -27,27 +26,13 @@ int server(){
         exit(EXIT_FAILURE);
     }
  
-    // Forcefully attaching socket to the port 8080
-    if (setsockopt(server_fd, SOL_SOCKET,
-                   SO_REUSEADDR | SO_REUSEPORT, &opt,
-                   sizeof(opt))) {
-        perror("setsockopt");
-        exit(EXIT_FAILURE);
-    }
-//can potentially remove this to use random ports and addresses and stuff
+    //can potentially remove this to use random ports and addresses and stuff
     cli_addr.sin_family = AF_INET;
     cli_addr.sin_addr.s_addr = INADDR_ANY;
     cli_addr.sin_port = htons(PORT);
 
-
-
-
-
- 
     // Forcefully attaching socket to the port 8080
-    if (bind(server_fd, (struct sockaddr*)&cli_addr,
-             sizeof(cli_addr))
-        < 0) {
+    if (bind(server_fd, (struct sockaddr*)&cli_addr,sizeof(cli_addr)) < 0) {
         perror("bind failed");
         exit(EXIT_FAILURE);
     }
@@ -64,26 +49,30 @@ int server(){
     int port = (int) ntohs(cli_addr.sin_port);
     printf("Waiting for a connection on %s port %d\n", ip, port);
 
-    if ((new_socket
-         = accept(server_fd, (struct sockaddr*)&cli_addr,
-                  (socklen_t*)&addrlen))
-        < 0) {
+    if ((new_socket= accept(server_fd, (struct sockaddr*)&cli_addr, (socklen_t*)&addrlen)) < 0) {
         perror("accept");
         exit(EXIT_FAILURE);
     }
+    printf("Found a friend! You receive first.\n");
 
 
+    while (true){
+        valread = recv(new_socket, buffer, 1024, 0);
+        printf("Friend: %s\n", buffer);
+        char userMessage[1000];
+        printf("You: ");
+        scanf("%s", userMessage);
+        int msgLength = strlen(userMessage);
+        while (msgLength > 140){
+            printf("Error: message too long!\n");
+            scanf("%s", userMessage);
+            msgLength = strlen(userMessage);
+        }
+        //fgets(userMessage, 140, stdin); //TODO : Error checking here if the msg is over 140 characters
 
-    valread = recv(new_socket, buffer, 1024, 0);
-    printf("%s\n", buffer);
 
-    char userMessage[140];
-    printf("What would you like to say?\n");
-    fgets(userMessage, 140, stdin);
-
-
-    send(new_socket, userMessage, strlen(userMessage), 0);
-    printf("Hello message sent\n");
+        send(new_socket, userMessage, strlen(userMessage), 0);
+    }
  
     // closing the connected socket
     close(new_socket);
@@ -93,7 +82,7 @@ int server(){
 }
 
 int client(const char* ip){
-    printf("test\n");
+    printf("Connecting to server...\n");
     int sock = 0, valread, client_fd;
     struct sockaddr_in serv_addr;
     char* hello = "Hello from client";
@@ -105,8 +94,7 @@ int client(const char* ip){
  
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_port = htons(PORT);
-    printf("%s\n", ip);
-    printf("1\n");
+
     //Load in correct address
     if (inet_pton(AF_INET, ip, &serv_addr.sin_addr)
         <= 0) {
@@ -115,29 +103,30 @@ int client(const char* ip){
         return -1;
     }
     char *ip2 = inet_ntoa(serv_addr.sin_addr);
-    printf("server_addr is %s\n", ip2);
-    printf("about to connect\n");
     client_fd = connect(sock, (struct sockaddr*)&serv_addr, sizeof(serv_addr));
-    printf("connected\n");
-
     if (client_fd < 0) {
         printf("\nConnection Failed \n");
         return -1;
     }
+    printf("Connected!\n");
+    printf("Connected to a friend! You send first.\n");
 
     //Create a buffer to read user input
-    char userMessage[140];
-    printf("What would you like to say?\n");
-    fgets(userMessage, 140, stdin);
-
-
-    send(sock, userMessage, strlen(userMessage), 0);
-    printf("Hello message sent:\n");
-
-
-
-    valread = read(sock, buffer, 1024);
-    printf("%s\n", buffer);
+    while (true){
+        char userMessage[140];
+        printf("You: ");
+        scanf("%s", userMessage);
+        int msgLength = strlen(userMessage);
+        while (msgLength > 140){
+            printf("Error: message too long!\n");
+            scanf("%s", userMessage);
+            msgLength = strlen(userMessage);
+        }
+        //fgets(userMessage, 140, stdin);   //The SAFE way to do it, but not possible here??
+        send(sock, userMessage, strlen(userMessage), 0);
+        valread = read(sock, buffer, 1024);
+        printf("Friend: %s\n", buffer);
+    }
  
     // closing the connected socket
     close(client_fd);
