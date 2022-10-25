@@ -12,12 +12,8 @@ using namespace std;
 int server(){
     int server_fd, new_socket, valread;
     struct sockaddr_in cli_addr;
-    int opt = 1;
     int addrlen = sizeof(cli_addr);
     char buffer[1024] = {0};
-    char* hello = "Hello from server";
-
-
 
 
     // Creating socket file descriptor
@@ -27,9 +23,19 @@ int server(){
     }
  
     //can potentially remove this to use random ports and addresses and stuff
+    char hostname[1024];
+    hostname[1023] = '\0';
+    gethostname(hostname, 1023);
+    printf("Hostname: %s\n", hostname);
+
+    struct hostent *gethostbyname(const char *name);
+
     cli_addr.sin_family = AF_INET;
     cli_addr.sin_addr.s_addr = INADDR_ANY;
     cli_addr.sin_port = htons(PORT);
+
+    
+
 
     // Forcefully attaching socket to the port 8080
     if (bind(server_fd, (struct sockaddr*)&cli_addr,sizeof(cli_addr)) < 0) {
@@ -44,6 +50,11 @@ int server(){
         perror("listen");
         exit(EXIT_FAILURE);
     }
+
+    struct in_addr ipAddr = cli_addr.sin_addr;
+    char str[INET_ADDRSTRLEN];
+    inet_ntop( AF_INET, &ipAddr, str, INET_ADDRSTRLEN );
+    printf("%s\n", str);
 
     char *ip = inet_ntoa(cli_addr.sin_addr);
     int port = (int) ntohs(cli_addr.sin_port);
@@ -134,6 +145,8 @@ int client(const char* ip){
 }
 
 int main(int argc, char const* argv[]){
+
+    
    if(argc == 1){
         
         server();
