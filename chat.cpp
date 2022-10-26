@@ -8,7 +8,7 @@
 #include <sys/types.h>
 #include <sys/ioctl.h>
 #include <net/if.h>
-#define PORT 8090
+#define PORT 8092
 
 using namespace std;
 char * print_ip(){
@@ -40,14 +40,6 @@ int server() {
         exit(EXIT_FAILURE);
     }
 
-    // can potentially remove this to use random ports and addresses and stuff
-    char hostname[1024];
-    hostname[1023] = '\0';
-    gethostname(hostname, 1023);
-    printf("Hostname: %s\n", hostname);
-
-    // struct hostent *gethostbyname(const char *name);
-
     cli_addr.sin_family = AF_INET;
     cli_addr.sin_addr.s_addr = INADDR_ANY;
     cli_addr.sin_port = htons(PORT);
@@ -62,11 +54,6 @@ int server() {
         perror("listen");
         exit(EXIT_FAILURE);
     }
-
-    struct in_addr ipAddr = cli_addr.sin_addr;
-    char str[INET_ADDRSTRLEN];
-    inet_ntop(AF_INET, &ipAddr, str, INET_ADDRSTRLEN);
-    printf("%s\n", str);
 
     char *ip = print_ip();
     int port = (int)ntohs(cli_addr.sin_port);
@@ -102,19 +89,19 @@ int server() {
     return 0;
 }
 
-int client(const char *ip) {
+int client(const char *ip, int portNum) {
     printf("Connecting to server...\n");
     int sock = 0, valread, client_fd;
     struct sockaddr_in serv_addr;
-    char *hello = "Hello from client";
     char buffer[1024] = {0};
     if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
         printf("\n Socket creation error \n");
         return -1;
     }
 
+
     serv_addr.sin_family = AF_INET;
-    serv_addr.sin_port = htons(PORT);
+    serv_addr.sin_port = htons(portNum);
 
     // Load in correct address
     if (inet_pton(AF_INET, ip, &serv_addr.sin_addr) <= 0) {
@@ -199,7 +186,7 @@ int main(int argc, char *argv[]) {
             return 0;
         }
         
-        client(ipAddr);
+        client(ipAddr, portNum);
     }
     return 0;
 }
