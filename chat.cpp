@@ -5,9 +5,28 @@
 #include <sys/socket.h>
 #include <unistd.h>
 #include <arpa/inet.h>
+#include <sys/types.h>
+#include <sys/ioctl.h>
+#include <net/if.h>
 #define PORT 8090
 
 using namespace std;
+char * print_ip(){
+    int n;
+    struct ifreq ifr;
+    char array[] = "eno1";  //Will we always be using this?? TODO
+ 
+    n = socket(AF_INET, SOCK_DGRAM, 0);
+    //Type of address to retrieve - IPv4 IP address
+    ifr.ifr_addr.sa_family = AF_INET;
+    //Copy the interface name in the ifreq structure
+    strncpy(ifr.ifr_name , array , IFNAMSIZ - 1);
+    ioctl(n, SIOCGIFADDR, &ifr);
+    close(n);
+    //display result
+    //printf("IP Address is %s - %s\n" , array , inet_ntoa(( (struct sockaddr_in *)&ifr.ifr_addr )->sin_addr) );
+    return inet_ntoa(( (struct sockaddr_in *)&ifr.ifr_addr )->sin_addr);
+}
 
 int server() {
     int server_fd, new_socket, valread;
@@ -49,7 +68,7 @@ int server() {
     inet_ntop(AF_INET, &ipAddr, str, INET_ADDRSTRLEN);
     printf("%s\n", str);
 
-    char *ip = inet_ntoa(cli_addr.sin_addr);
+    char *ip = print_ip();
     int port = (int)ntohs(cli_addr.sin_port);
     printf("Waiting for a connection on %s port %d\n", ip, port);
 
