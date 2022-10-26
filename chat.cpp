@@ -60,8 +60,7 @@ int server() {
     unsigned int myPort = ntohs(my_addr.sin_port);
 
     char *ip = print_ip();
-    int port = (int)ntohs(cli_addr.sin_port);
-    printf("Waiting for a connection on %s port %d\n", ip, port);
+    printf("Waiting for a connection on %s port %d\n", ip, myPort);
 
     if ((new_socket = accept(server_fd, (struct sockaddr *)&cli_addr, (socklen_t *)&addrlen)) < 0) {
         perror("accept");
