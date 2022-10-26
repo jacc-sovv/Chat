@@ -30,7 +30,7 @@ char * print_ip(){
 
 int server() {
     int server_fd, new_socket, valread;
-    struct sockaddr_in cli_addr;
+    struct sockaddr_in cli_addr, my_addr;
     int addrlen = sizeof(cli_addr);
     char buffer[1024] = {0};
 
@@ -40,17 +40,9 @@ int server() {
         exit(EXIT_FAILURE);
     }
 
-    // can potentially remove this to use random ports and addresses and stuff
-    char hostname[1024];
-    hostname[1023] = '\0';
-    gethostname(hostname, 1023);
-    printf("Hostname: %s\n", hostname);
-
-    // struct hostent *gethostbyname(const char *name);
-
     cli_addr.sin_family = AF_INET;
     cli_addr.sin_addr.s_addr = INADDR_ANY;
-    cli_addr.sin_port = htons(PORT);
+    cli_addr.sin_port = htons(0);
 
     // Forcefully attaching socket to the port 8080
     if (bind(server_fd, (struct sockaddr *)&cli_addr, sizeof(cli_addr)) < 0) {
@@ -63,14 +55,12 @@ int server() {
         exit(EXIT_FAILURE);
     }
 
-    struct in_addr ipAddr = cli_addr.sin_addr;
-    char str[INET_ADDRSTRLEN];
-    inet_ntop(AF_INET, &ipAddr, str, INET_ADDRSTRLEN);
-    printf("%s\n", str);
+    socklen_t len = sizeof(my_addr);
+    getsockname(server_fd, (struct sockaddr *)&my_addr, &len);
+    unsigned int myPort = ntohs(my_addr.sin_port);
 
     char *ip = print_ip();
-    int port = (int)ntohs(cli_addr.sin_port);
-    printf("Waiting for a connection on %s port %d\n", ip, port);
+    printf("Waiting for a connection on %s port %d\n", ip, myPort);
 
     if ((new_socket = accept(server_fd, (struct sockaddr *)&cli_addr, (socklen_t *)&addrlen)) < 0) {
         perror("accept");
