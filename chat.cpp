@@ -1,3 +1,15 @@
+/*******************************************
+* Group Name  : xXXXXx
+
+* Member1 Name: John McFall
+* Member1 SIS ID: 832435619
+* Member1 Login ID: jmcf521
+
+* Member2 Name: Jack Sovereign
+* Member2 SIS ID: 832430250
+* Member2 Login ID: jacc
+********************************************/
+
 #include <netinet/in.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -8,7 +20,6 @@
 #include <sys/types.h>
 #include <sys/ioctl.h>
 #include <net/if.h>
-#define PORT 8090
 
 using namespace std;
 char * print_ip(){
@@ -60,7 +71,7 @@ int server() {
     unsigned int myPort = ntohs(my_addr.sin_port);
 
     char *ip = print_ip();
-    printf("Waiting for a connection on %s port %d\n", ip, myPort);
+    printf("Welcome to Chat!\nWaiting for a connection on %s port %d\n", ip, myPort);
 
     if ((new_socket = accept(server_fd, (struct sockaddr *)&cli_addr, (socklen_t *)&addrlen)) < 0) {
         perror("accept");
@@ -75,20 +86,17 @@ int server() {
         int msgLength = 0;
         valread = recv(new_socket, buffer, 1024, 0);
         printf("Friend: %s\n", buffer);
-        printf("You: ");
-        // scanf("%[^\n]", userMessage);    
+        printf("You: ");   
         msgLength = getline(&userMessage, &inputLen, stdin);
         userMessage[msgLength - 1] = '\0';
         msgLength--;
         // printf("SERVER: You entered %s, which has %d chars.\n", userMessage, msgLength);
         while (msgLength > 140) {
-            printf("Error: message too long!\nYou: ");
+            printf("Error: Input too long.\nYou: ");
             msgLength = getline(&userMessage, &inputLen, stdin);
             userMessage[msgLength - 1] = '\0';
             msgLength--;
         }
-        // fgets(userMessage, 140, stdin); //TODO : Error checking here if the msg is over 140 characters
-
         send(new_socket, userMessage, strlen(userMessage), 0);
         free(userMessage);
     }
@@ -142,7 +150,7 @@ int client(const char *ip, const int portNum) {
         msgLength--;
         // printf("CLIENT: You entered %s, which has %d chars.\n", userMessage, msgLength);
         while (msgLength > 140) {
-            printf("Error: message too long!\nYou: ");
+            printf("Error: Input too long.\nYou: ");
             msgLength = getline(&userMessage, &inputLen, stdin);
             userMessage[msgLength - 1] = '\0';
             msgLength--;
@@ -157,6 +165,29 @@ int client(const char *ip, const int portNum) {
     // closing the connected socket
     close(client_fd);
     return 0;
+}
+
+int ipValidator(const char* ipToCheck) {
+    char validChars[11] = {'0','1','2','3','4','5','6','7','8','9','.'};
+    bool flag = false;
+    int pCount = 0;
+    for(int i = 0; i < sizeof(ipToCheck); i++){
+        for(int j = 0; j < sizeof(validChars); j++){
+            if(&ipToCheck[i] == &validChars[j]){
+                flag = true;
+                if(&ipToCheck[i] == &validChars[10]){
+                    pCount++;
+                }
+            } 
+        }
+        if(flag){
+            flag = false;
+        } else {
+            return false;
+        }
+    }
+    if(pCount != 3) return false;
+    return true;
 }
 
 int main(int argc, char *argv[]) {
@@ -202,7 +233,10 @@ int main(int argc, char *argv[]) {
             printf("Error: Invalid port\nUsage for server: %s\nUsage for client: %s -s ipAddress -p port\n", argv[0], argv[0]);
             return 0;
         }
-        
+        if(ipValidator(ipAddr)) { 
+            printf("Error: Invalid IP address\nUsage for server: %s\nUsage for client: %s -s ipAddress -p port\n", argv[0], argv[0]);
+            return 0;
+        }
         client(ipAddr, portNum);
     }
     return 0;
