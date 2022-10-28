@@ -1,5 +1,5 @@
 /*******************************************
-* Group Name  : XXXXXX
+* Group Name  : xXXXXx
 
 * Member1 Name: John McFall
 * Member1 SIS ID: 832435619
@@ -20,8 +20,6 @@
 #include <sys/types.h>
 #include <sys/ioctl.h>
 #include <net/if.h>
-#include <regex.h>  
-#define PORT 8090
 
 using namespace std;
 char * print_ip(){
