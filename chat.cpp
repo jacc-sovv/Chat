@@ -32,7 +32,7 @@ int server() {
     int server_fd, new_socket, valread;
     struct sockaddr_in cli_addr, my_addr;
     int addrlen = sizeof(cli_addr);
-    char buffer[1024] = {0};
+    
 
     // Creating socket file descriptor
     if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
@@ -69,20 +69,27 @@ int server() {
     printf("Found a friend! You receive first.\n");
 
     while (true) {
+        char buffer[1024] = {0};
+        char *userMessage = NULL;
+        size_t inputLen = 0;
+        int msgLength = 0;
         valread = recv(new_socket, buffer, 1024, 0);
         printf("Friend: %s\n", buffer);
-        char userMessage[1000];
         printf("You: ");
-        scanf("%s", userMessage);
-        int msgLength = strlen(userMessage);
+        // scanf("%[^\n]", userMessage);    
+        msgLength = getline(&userMessage, &inputLen, stdin);
+        userMessage[msgLength - 1] = '\0';
+        msgLength--;
+        // printf("SERVER: You entered %s, which has %d chars.\n", userMessage, msgLength);
         while (msgLength > 140) {
             printf("Error: message too long!\n");
-            scanf("%s", userMessage);
+            scanf("%999[^\n]", userMessage);
             msgLength = strlen(userMessage);
         }
         // fgets(userMessage, 140, stdin); //TODO : Error checking here if the msg is over 140 characters
 
         send(new_socket, userMessage, strlen(userMessage), 0);
+        free(userMessage);
     }
 
     // closing the connected socket
@@ -97,7 +104,7 @@ int client(const char *ip, const int portNum) {
     int sock = 0, valread, client_fd;
     struct sockaddr_in serv_addr;
     char *hello = "Hello from client";
-    char buffer[1024] = {0};
+    
     if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
         printf("\n Socket creation error \n");
         return -1;
@@ -122,19 +129,26 @@ int client(const char *ip, const int portNum) {
     printf("Connected to a friend! You send first.\n");
 
     // Create a buffer to read user input
+    
     while (true) {
-        char userMessage[140];
+        char buffer[1024] = {0};
+        char *userMessage = NULL;
+        size_t inputLen = 0;
+        int msgLength = 0;
         printf("You: ");
-        scanf("%s", userMessage);
-        int msgLength = strlen(userMessage);
+        msgLength = getline(&userMessage, &inputLen, stdin);
+        userMessage[msgLength - 1] = '\0';
+        msgLength--;
+        // printf("CLIENT: You entered %s, which has %d chars.\n", userMessage, msgLength);
         while (msgLength > 140) {
             printf("Error: message too long!\n");
-            scanf("%s", userMessage);
+            scanf("%999[^\n]", userMessage);
             msgLength = strlen(userMessage);
         }
         // fgets(userMessage, 140, stdin);   //The SAFE way to do it, but not possible here??
         send(sock, userMessage, strlen(userMessage), 0);
-        valread = read(sock, buffer, 1024);
+        free(userMessage);
+        valread = recv(sock, buffer, 1024, 0);
         printf("Friend: %s\n", buffer);
     }
 
@@ -159,12 +173,10 @@ int main(int argc, char *argv[]) {
             case 'p':
                 portNum = atoi(optarg);
                 pFlag = 1;
-                printf("p flag %d \n", portNum);
                 break;
             case 's':
                 ipAddr = optarg;
                 sFlag = 1;
-                printf("s flag %s \n", ipAddr);
                 break;
             case 'h':
                 printf("Usage for server: %s\nUsage for client: %s -s ipAddress -p port\n", argv[0], argv[0]);
