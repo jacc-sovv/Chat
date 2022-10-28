@@ -28,6 +28,45 @@ char * print_ip(){
     return inet_ntoa(( (struct sockaddr_in *)&ifr.ifr_addr )->sin_addr);
 }
 
+char *msg_as_packet(char * msg){
+    printf("STARTING MSG AS PACKET\n");
+    printf("msg is what? %s", msg);
+    char * packet = (char *) malloc(sizeof(char) * 144);
+    packet[0] = 'h';
+    printf("malloc passed\n");
+    //char packet[144];
+    //char version[2];
+    //sprintf(version, "%d", htons(457));
+    memcpy(packet, (void *)htons(457), 2);
+
+    char length[2];
+    sprintf(length,  "%d", htons(strlen(msg)));
+
+    // memcpy(packet, version, 2);
+
+
+    // packet[0] = version[0];
+    // packet[1] = version[1];
+
+    packet[2] = length[0];
+    packet[3] = length[1];
+    printf("about to hit for loop\n");
+    printf("user messag eis %s", msg);
+    printf("packet now looks like %s\n", packet);
+    for(int i = 0; i < strlen(msg); i++){
+        printf("putting %c into buffer at index %d\n", msg[i], i);
+        packet[i + 4] = msg[i];
+        printf("%c\n", packet[i+4]);
+        
+    }
+    printf("final packet is %s\n", packet);
+    for(int i = 0; i < sizeof(packet); i++){
+        printf("%c", packet[i]);
+    }
+    return packet;
+
+}
+
 int server() {
     int server_fd, new_socket, valread;
     struct sockaddr_in cli_addr, my_addr;
@@ -140,6 +179,7 @@ int client(const char *ip, const int portNum) {
         msgLength = getline(&userMessage, &inputLen, stdin);
         userMessage[msgLength - 1] = '\0';
         msgLength--;
+
         // printf("CLIENT: You entered %s, which has %d chars.\n", userMessage, msgLength);
         while (msgLength > 140) {
             printf("Error: message too long!\nYou: ");
@@ -148,7 +188,9 @@ int client(const char *ip, const int portNum) {
             msgLength--;
         }
         // fgets(userMessage, 140, stdin);   //The SAFE way to do it, but not possible here??
-        send(sock, userMessage, strlen(userMessage), 0);
+        char* test = msg_as_packet(userMessage);
+        printf("Packet looks like %s\n", test);
+        send(sock, test, strlen(userMessage), 0);
         free(userMessage);
         valread = recv(sock, buffer, 1024, 0);
         printf("Friend: %s\n", buffer);
