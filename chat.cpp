@@ -82,9 +82,10 @@ int server() {
         msgLength--;
         // printf("SERVER: You entered %s, which has %d chars.\n", userMessage, msgLength);
         while (msgLength > 140) {
-            printf("Error: message too long!\n");
-            scanf("%999[^\n]", userMessage);
-            msgLength = strlen(userMessage);
+            printf("Error: message too long!\nYou: ");
+            msgLength = getline(&userMessage, &inputLen, stdin);
+            userMessage[msgLength - 1] = '\0';
+            msgLength--;
         }
         // fgets(userMessage, 140, stdin); //TODO : Error checking here if the msg is over 140 characters
 
@@ -141,9 +142,10 @@ int client(const char *ip, const int portNum) {
         msgLength--;
         // printf("CLIENT: You entered %s, which has %d chars.\n", userMessage, msgLength);
         while (msgLength > 140) {
-            printf("Error: message too long!\n");
-            scanf("%999[^\n]", userMessage);
-            msgLength = strlen(userMessage);
+            printf("Error: message too long!\nYou: ");
+            msgLength = getline(&userMessage, &inputLen, stdin);
+            userMessage[msgLength - 1] = '\0';
+            msgLength--;
         }
         // fgets(userMessage, 140, stdin);   //The SAFE way to do it, but not possible here??
         send(sock, userMessage, strlen(userMessage), 0);
