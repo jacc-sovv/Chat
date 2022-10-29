@@ -21,13 +21,11 @@
 #include <sys/ioctl.h>
 #include <net/if.h>
 
-//unsigned char packet[144];
-
 using namespace std;
 char * print_ip(){
     int n;
     struct ifreq ifr;
-    char array[] = "eno1";  //Will we always be using this?? TODO
+    char array[] = "eno1"; 
  
     n = socket(AF_INET, SOCK_DGRAM, 0);
     //Type of address to retrieve - IPv4 IP address
@@ -58,23 +56,8 @@ int unpacki16(unsigned char *buf)
     return i;
 }
 
-typedef struct packet{
-    uint16_t version;
-    uint16_t length;
-    char* msg;
-} packet;
-
-// bool is_valid(unsigned char * buffer){
-//     unpack(buffe)
-// }
-
 void msg_as_packet(unsigned char * buffer, char * msg){
 
-    //memcpy(packet, (void *)htons(457), 2);
-
-
-    // char length[2];
-    // sprintf(length,  "%d", htons(strlen(msg)));
     //Host to network
     packi16(buffer, 457);
     buffer += 2;
@@ -85,53 +68,24 @@ void msg_as_packet(unsigned char * buffer, char * msg){
     memcpy(buffer, msg, strlen(msg));
 
     buffer -= 4 + strlen(msg);
-
-    // packet[0] = version[0];
-    // packet[1] = version[1];
-
-    // printf("about to hit for loop\n");
-    // printf("user messag eis %s", msg);
-    // printf("packet now looks like %s\n", packet);
-    // for(int i = 0; i < strlen(msg); i++){
-    //     printf("putting %c into buffer at index %d\n", msg[i], i);
-    //     packet[i + 4] = msg[i];
-    //     printf("%c\n", packet[i+4]);
-        
-    // }
-    // printf("final packet is %s\n", packet);
-    // for(int i = 0; i < sizeof(packet); i++){
-    //     printf("%c", packet[i]);
-    // }
-
-}
-
-packet pack_msg(char* msg){
-    packet my_packet;
-    my_packet.version = htons(457);
-    my_packet.length = htons(strlen(msg));
-    my_packet.msg = msg;
-    return my_packet;
 }
 
 unsigned char * unpack(unsigned char* message){
+    //Network to host
     int version = unpacki16(message);
     if(version != 457){
         printf("ERROR : VERSION NOT 457, EXITTING");
         exit(1);
     }
-    message += 2;
-    int length = unpacki16(message);
-    message += 2;
+    message += 4;
     return message;
-
 }
 
 int server() {
-    int server_fd, new_socket, valread;
+    int server_fd, new_socket;
     struct sockaddr_in cli_addr, my_addr;
     int addrlen = sizeof(cli_addr);
     
-
     // Creating socket file descriptor
     if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
         perror("socket failed");
@@ -142,7 +96,6 @@ int server() {
     cli_addr.sin_addr.s_addr = INADDR_ANY;
     cli_addr.sin_port = htons(0);
 
-    // Forcefully attaching socket to the port 8080
     if (bind(server_fd, (struct sockaddr *)&cli_addr, sizeof(cli_addr)) < 0) {
         perror("bind failed");
         exit(EXIT_FAILURE);
@@ -171,43 +124,34 @@ int server() {
         char *userMessage = NULL;
         size_t inputLen = 0;
         int msgLength = 0;
-        valread = recv(new_socket, buffer, 1024, 0);
+        recv(new_socket, buffer, 1024, 0);
         unsigned char* msg = unpack(buffer);
         printf("Friend: %s", msg);
-        printf("\nYou: ");
-        // scanf("%[^\n]", userMessage);    
+        printf("\nYou: "); 
         msgLength = getline(&userMessage, &inputLen, stdin);
         userMessage[msgLength - 1] = '\0';
         msgLength--;
-        // printf("SERVER: You entered %s, which has %d chars.\n", userMessage, msgLength);
         while (msgLength > 140) {
             printf("Error: Input too long.\nYou: ");
             msgLength = getline(&userMessage, &inputLen, stdin);
             userMessage[msgLength - 1] = '\0';
             msgLength--;
         }
-        // fgets(userMessage, 140, stdin); //TODO : Error checking here if the msg is over 140 characters
-
         unsigned char * packet = (unsigned char *) malloc(sizeof(unsigned char) * 144);
         msg_as_packet(packet, userMessage);
-
         send(new_socket, packet, strlen(userMessage)+4, 0);
         free(userMessage);
         free(packet);
     }
-
-    // closing the connected socket
     close(new_socket);
-    // closing the listening socket
     shutdown(server_fd, SHUT_RDWR);
     return 0;
 }
 
 int client(const char *ip, const int portNum) {
     printf("Connecting to server...\n");
-    int sock = 0, valread, client_fd;
+    int sock = 0, client_fd;
     struct sockaddr_in serv_addr;
-    char *hello = "Hello from client";
     
     if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
         printf("\n Socket creation error \n");
@@ -223,7 +167,7 @@ int client(const char *ip, const int portNum) {
             "\nInvalid address/ Address not supported \n");
         return -1;
     }
-    char *ip2 = inet_ntoa(serv_addr.sin_addr);
+    inet_ntoa(serv_addr.sin_addr);
     client_fd = connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr));
     if (client_fd < 0) {
         printf("\nConnection Failed \n");
@@ -243,23 +187,18 @@ int client(const char *ip, const int portNum) {
         msgLength = getline(&userMessage, &inputLen, stdin);
         userMessage[msgLength - 1] = '\0';
         msgLength--;
-
-        // printf("CLIENT: You entered %s, which has %d chars.\n", userMessage, msgLength);
         while (msgLength > 140) {
             printf("Error: Input too long.\nYou: ");
             msgLength = getline(&userMessage, &inputLen, stdin);
             userMessage[msgLength - 1] = '\0';
             msgLength--;
         }
-        // fgets(userMessage, 140, stdin);   //The SAFE way to do it, but not possible here??
         unsigned char * packet = (unsigned char *) malloc(sizeof(unsigned char) * 144);
         msg_as_packet(packet, userMessage);
-
-        //packet my_packet = pack_msg(userMessage);
         send(sock, packet, strlen(userMessage) + 4, 0);
         free(userMessage);
         free(packet);
-        valread = recv(sock, buffer, 1024, 0);
+        recv(sock, buffer, 1024, 0);
         unsigned char* msg = unpack(buffer);
         printf("Friend: %s", msg);
     }
@@ -273,8 +212,8 @@ int ipValidator(const char* ipToCheck) {
     char validChars[11] = {'0','1','2','3','4','5','6','7','8','9','.'};
     bool flag = false;
     int pCount = 0;
-    for(int i = 0; i < sizeof(ipToCheck); i++){
-        for(int j = 0; j < sizeof(validChars); j++){
+    for(int i = 0; i < (int)sizeof(ipToCheck); i++){
+        for(int j = 0; j < (int)sizeof(validChars); j++){
             if(&ipToCheck[i] == &validChars[j]){
                 flag = true;
                 if(&ipToCheck[i] == &validChars[10]){
@@ -323,7 +262,7 @@ int main(int argc, char *argv[]) {
                 break;
             }
         }
-        if(sFlag != 1) { //Still need to sanity check IP input
+        if(sFlag != 1) { 
             printf("Error: Missing IP address\nUsage for server: %s\nUsage for client: %s -s ipAddress -p port\n", argv[0], argv[0]);
             return 0;
         }
