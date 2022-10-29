@@ -53,9 +53,12 @@ typedef struct packet{
     char* msg;
 } packet;
 
+// bool is_valid(unsigned char * buffer){
+//     unpack(buffe)
+// }
+
 void msg_as_packet(unsigned char * buffer, char * msg){
-    printf("STARTING MSG AS PACKET\n");
-    printf("msg is what? %s\n", msg);
+
     //memcpy(packet, (void *)htons(457), 2);
 
 
@@ -69,7 +72,7 @@ void msg_as_packet(unsigned char * buffer, char * msg){
 
 
     memcpy(buffer, msg, strlen(msg));
-    printf("in function, final packet is %s\n", buffer);
+
     buffer -= 4 + strlen(msg);
 
     // packet[0] = version[0];
@@ -100,15 +103,14 @@ packet pack_msg(char* msg){
 }
 
 unsigned char * unpack(unsigned char* message){
-    printf("Message is %s\n", message);
     int version = unpacki16(message);
-    printf("version is %d\n", version);
+    if(version != 457){
+        printf("ERROR : VERSION NOT 457, EXITTING");
+        exit(1);
+    }
     message += 2;
-    printf("Message is %s\n", message);
     int length = unpacki16(message);
     message += 2;
-    
-    printf("Message is %s\n", message);
     return message;
 
 }
@@ -160,8 +162,8 @@ int server() {
         int msgLength = 0;
         valread = recv(new_socket, buffer, 1024, 0);
         unsigned char* msg = unpack(buffer);
-        printf("Friend: %s\n", msg);
-        printf("You: ");
+        printf("Friend: %s", msg);
+        printf("\nYou: ");
         // scanf("%[^\n]", userMessage);    
         msgLength = getline(&userMessage, &inputLen, stdin);
         userMessage[msgLength - 1] = '\0';
@@ -178,7 +180,7 @@ int server() {
         unsigned char * packet = (unsigned char *) malloc(sizeof(unsigned char) * 144);
         msg_as_packet(packet, userMessage);
 
-        send(new_socket, userMessage, strlen(userMessage), 0);
+        send(new_socket, packet, strlen(userMessage)+4, 0);
         free(userMessage);
         free(packet);
     }
@@ -217,7 +219,7 @@ int client(const char *ip, const int portNum) {
         return -1;
     }
     printf("Connected!\n");
-    printf("Connected to a friend! You send first.\n");
+    printf("Connected to a friend! You send first.");
 
     // Create a buffer to read user input
     
@@ -226,7 +228,7 @@ int client(const char *ip, const int portNum) {
         char *userMessage = NULL;
         size_t inputLen = 0;
         int msgLength = 0;
-        printf("You: ");
+        printf("\nYou: ");
         msgLength = getline(&userMessage, &inputLen, stdin);
         userMessage[msgLength - 1] = '\0';
         msgLength--;
@@ -240,16 +242,15 @@ int client(const char *ip, const int portNum) {
         }
         // fgets(userMessage, 140, stdin);   //The SAFE way to do it, but not possible here??
         unsigned char * packet = (unsigned char *) malloc(sizeof(unsigned char) * 144);
-        printf("about to call msg as packet\n");
         msg_as_packet(packet, userMessage);
-        printf("Packet looks like %s\n", packet);
+
         //packet my_packet = pack_msg(userMessage);
         send(sock, packet, strlen(userMessage) + 4, 0);
         free(userMessage);
         free(packet);
         valread = recv(sock, buffer, 1024, 0);
         unsigned char* msg = unpack(buffer);
-        printf("Friend: %s\n", msg);
+        printf("Friend: %s", msg);
     }
 
     // closing the connected socket
