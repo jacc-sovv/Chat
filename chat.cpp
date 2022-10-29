@@ -21,6 +21,8 @@
 #include <sys/ioctl.h>
 #include <net/if.h>
 
+//unsigned char packet[144];
+
 using namespace std;
 char * print_ip(){
     int n;
@@ -37,6 +39,91 @@ char * print_ip(){
     //display result
     //printf("IP Address is %s - %s\n" , array , inet_ntoa(( (struct sockaddr_in *)&ifr.ifr_addr )->sin_addr) );
     return inet_ntoa(( (struct sockaddr_in *)&ifr.ifr_addr )->sin_addr);
+}
+
+void packi16(unsigned char *buf, unsigned int i)
+{
+    *buf++ = i>>8; *buf++ = i;
+}
+
+int unpacki16(unsigned char *buf)
+{
+    unsigned int i2 = ((unsigned int)buf[0]<<8) | buf[1];
+    int i;
+
+    // change unsigned numbers to signed
+    if (i2 <= 0x7fffu) { i = i2; }
+    else { i = -1 - (unsigned int)(0xffffu - i2); }
+
+    return i;
+}
+
+typedef struct packet{
+    uint16_t version;
+    uint16_t length;
+    char* msg;
+} packet;
+
+// bool is_valid(unsigned char * buffer){
+//     unpack(buffe)
+// }
+
+void msg_as_packet(unsigned char * buffer, char * msg){
+
+    //memcpy(packet, (void *)htons(457), 2);
+
+
+    // char length[2];
+    // sprintf(length,  "%d", htons(strlen(msg)));
+    //Host to network
+    packi16(buffer, 457);
+    buffer += 2;
+    packi16(buffer, strlen(msg));
+    buffer += 2;
+
+
+    memcpy(buffer, msg, strlen(msg));
+
+    buffer -= 4 + strlen(msg);
+
+    // packet[0] = version[0];
+    // packet[1] = version[1];
+
+    // printf("about to hit for loop\n");
+    // printf("user messag eis %s", msg);
+    // printf("packet now looks like %s\n", packet);
+    // for(int i = 0; i < strlen(msg); i++){
+    //     printf("putting %c into buffer at index %d\n", msg[i], i);
+    //     packet[i + 4] = msg[i];
+    //     printf("%c\n", packet[i+4]);
+        
+    // }
+    // printf("final packet is %s\n", packet);
+    // for(int i = 0; i < sizeof(packet); i++){
+    //     printf("%c", packet[i]);
+    // }
+
+}
+
+packet pack_msg(char* msg){
+    packet my_packet;
+    my_packet.version = htons(457);
+    my_packet.length = htons(strlen(msg));
+    my_packet.msg = msg;
+    return my_packet;
+}
+
+unsigned char * unpack(unsigned char* message){
+    int version = unpacki16(message);
+    if(version != 457){
+        printf("ERROR : VERSION NOT 457, EXITTING");
+        exit(1);
+    }
+    message += 2;
+    int length = unpacki16(message);
+    message += 2;
+    return message;
+
 }
 
 int server() {
@@ -80,13 +167,15 @@ int server() {
     printf("Found a friend! You receive first.\n");
 
     while (true) {
-        char buffer[1024] = {0};
+        unsigned char buffer[1024] = {0};
         char *userMessage = NULL;
         size_t inputLen = 0;
         int msgLength = 0;
         valread = recv(new_socket, buffer, 1024, 0);
-        printf("Friend: %s\n", buffer);
-        printf("You: ");   
+        unsigned char* msg = unpack(buffer);
+        printf("Friend: %s", msg);
+        printf("\nYou: ");
+        // scanf("%[^\n]", userMessage);    
         msgLength = getline(&userMessage, &inputLen, stdin);
         userMessage[msgLength - 1] = '\0';
         msgLength--;
@@ -97,8 +186,14 @@ int server() {
             userMessage[msgLength - 1] = '\0';
             msgLength--;
         }
-        send(new_socket, userMessage, strlen(userMessage), 0);
+        // fgets(userMessage, 140, stdin); //TODO : Error checking here if the msg is over 140 characters
+
+        unsigned char * packet = (unsigned char *) malloc(sizeof(unsigned char) * 144);
+        msg_as_packet(packet, userMessage);
+
+        send(new_socket, packet, strlen(userMessage)+4, 0);
         free(userMessage);
+        free(packet);
     }
 
     // closing the connected socket
@@ -135,19 +230,20 @@ int client(const char *ip, const int portNum) {
         return -1;
     }
     printf("Connected!\n");
-    printf("Connected to a friend! You send first.\n");
+    printf("Connected to a friend! You send first.");
 
     // Create a buffer to read user input
     
     while (true) {
-        char buffer[1024] = {0};
+        unsigned char buffer[1024] = {0};
         char *userMessage = NULL;
         size_t inputLen = 0;
         int msgLength = 0;
-        printf("You: ");
+        printf("\nYou: ");
         msgLength = getline(&userMessage, &inputLen, stdin);
         userMessage[msgLength - 1] = '\0';
         msgLength--;
+
         // printf("CLIENT: You entered %s, which has %d chars.\n", userMessage, msgLength);
         while (msgLength > 140) {
             printf("Error: Input too long.\nYou: ");
@@ -156,10 +252,16 @@ int client(const char *ip, const int portNum) {
             msgLength--;
         }
         // fgets(userMessage, 140, stdin);   //The SAFE way to do it, but not possible here??
-        send(sock, userMessage, strlen(userMessage), 0);
+        unsigned char * packet = (unsigned char *) malloc(sizeof(unsigned char) * 144);
+        msg_as_packet(packet, userMessage);
+
+        //packet my_packet = pack_msg(userMessage);
+        send(sock, packet, strlen(userMessage) + 4, 0);
         free(userMessage);
+        free(packet);
         valread = recv(sock, buffer, 1024, 0);
-        printf("Friend: %s\n", buffer);
+        unsigned char* msg = unpack(buffer);
+        printf("Friend: %s", msg);
     }
 
     // closing the connected socket
