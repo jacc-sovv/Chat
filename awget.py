@@ -44,14 +44,27 @@ port = starting_point.split()[1]
 
 print(f"IP is {ip}, port is {port}")
 
-#Stripy myself from the chainlist
-chain_list = chain_list[1:]
+#Stripy first connection from chainlist
+chain_list.remove(ip + " " + port)
 chain_list.insert(0, url)
 
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 s.connect((ip, int(port))) 
 #Send URL and chainlist to ss
 data = pickle.dumps(chain_list)
-s.send(data)
+s.sendall(data)
 #Wait until you receive the file
+
+full_data = b''
+
+#While there is data to be received, receive it
+while True:
+    chunk_data = s.recv(1024)
+    full_data += chunk_data
+    if(len(chunk_data) < 1024):
+        break
+
+f = open("test2", "wb")
+f.write(full_data)
+f.close()
 
