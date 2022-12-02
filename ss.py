@@ -62,8 +62,23 @@ def service_connection(key, mask):
                 #Issue wget request
                 command = "wget " + url
                 print("command is ", command)
+                filename = os.popen('basename "' + url + '"').read()
+                filename = filename.strip()
+
+                if(filename == url):    #If there is no file name, then the name of the file should be index.html
+                    filename = "index.html"
                 os.system(command)
-                print('yo')
+
+
+                #Send the file back, reading it 4096 bits at a time
+                f = open(filename, "rb")
+                file_data = f.read()
+                f.close()
+
+
+                data.outb += file_data  #Append the file data to data.outb
+                print("Data.outb contains all of file_data")
+
             else:
                 #Chainlist was not empty, forward to the next in the chain
                 starting_point = random.choice(chain_list)
@@ -72,27 +87,50 @@ def service_connection(key, mask):
                 port = starting_point.split()[1]
 
                 #Stripy myself from the chainlist
-                chain_list = chain_list[1:]
+                chain_list.remove(ip + " " + port)
                 chain_list.insert(0, url)
 
                 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 s.connect((ip, int(port))) 
                 #Send URL and chainlist to ss
-                data = pickle.dumps(chain_list)
-                s.send(data)
+                chain_data = pickle.dumps(chain_list)
+                print(f"Sending data to {ip}")
+                s.send(chain_data)
                 #Wait until you receive the file, then pass it back
+                full_data = b''
+
+                #While there is data to be received, receive it
+                loop_count = 0
+                while True:
+                    loop_count += 1
+                    chunk_data = s.recv(1024)
+                    full_data += chunk_data
+                    print(f"Chunk data is of size {len(chunk_data)}")
+                    if(len(chunk_data) < 1024):
+                        break
+                
+                print(f"All data received! Received {len(full_data)} bytes, looped through {loop_count} times")
+                data.outb += full_data
+                print(f"Length of data outb is {len(data.outb)}")
             
             
-            data.outb += recv_data
+
         else:
             print("closing connection to", data.addr)
             sel.unregister(sock)
             sock.close()
     if mask & selectors.EVENT_WRITE:
         if data.outb:
-            print("echoing", repr(data.outb), "to", data.addr)
-            sent = sock.send(data.outb)  # Should be ready to write
-            data.outb = data.outb[sent:]
+            print(f"Length of data.outb is now {len(data.outb)}")
+            # print("echoing", repr(data.outb), "to", data.addr)
+            print("Sending datat to ", data.addr)
+            #Sends out the file in chunks
+            sent = sock.sendall(data.outb)  # Should be ready to write
+            print(f"Chunk data should have length of {sent}")
+            # data.outb = data.outb[sent:]
+            data.outb = b''
+
+        # print("Data.outb has fully sent the data")
 
 
 # main program: set up the host address and port; change them if you need to
