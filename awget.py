@@ -59,12 +59,13 @@ full_data = b''
 
 #While there is data to be received, receive it
 while True:
-    chunk_data = s.recv(1024)
+    chunk_data = s.recv(4096)
     full_data += chunk_data
-    if(len(chunk_data) < 1024):
+    if(not chunk_data):
         break
 
-f = open("test2", "wb")
+print(f"length of the file is {len(full_data)}")
+f = open("test2.jpg", "wb")
 f.write(full_data)
 f.close()
 
