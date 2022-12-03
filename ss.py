@@ -32,7 +32,9 @@ def accept_wrapper(sock):
     data = types.SimpleNamespace(addr=addr, inb=b"", outb=b"")
     print(f"Data is {data.inb}")
     events = selectors.EVENT_READ | selectors.EVENT_WRITE
+    registered = True
     sel.register(conn, events, data=data)
+
 
 
 # this routine is called when a client is ready to read or write data  
@@ -74,6 +76,9 @@ def service_connection(key, mask):
                 f = open(filename, "rb")
                 file_data = f.read()
                 f.close()
+                os.remove(filename)
+
+                print(f"How big is the original file? {len(file_data)}")
 
 
                 data.outb += file_data  #Append the file data to data.outb
@@ -103,10 +108,10 @@ def service_connection(key, mask):
                 loop_count = 0
                 while True:
                     loop_count += 1
-                    chunk_data = s.recv(1024)
+                    chunk_data = s.recv(4096)
                     full_data += chunk_data
                     print(f"Chunk data is of size {len(chunk_data)}")
-                    if(len(chunk_data) < 1024):
+                    if(not chunk_data):
                         break
                 
                 print(f"All data received! Received {len(full_data)} bytes, looped through {loop_count} times")
@@ -124,20 +129,25 @@ def service_connection(key, mask):
             print(f"Length of data.outb is now {len(data.outb)}")
             # print("echoing", repr(data.outb), "to", data.addr)
             print("Sending datat to ", data.addr)
+            print(f"The type of data sending is {type(data.outb)}")
             #Sends out the file in chunks
-            sent = sock.sendall(data.outb)  # Should be ready to write
-            print(f"Chunk data should have length of {sent}")
-            # data.outb = data.outb[sent:]
-            data.outb = b''
+            # sent = sock.sendall(data.outb)  # Should be ready to write
+            # print(f"Chunk data should have length of {sent}")
+            sent = sock.send(data.outb)
+            data.outb = data.outb[sent:]
+            print(f"Chunk data sent : {sent}")
+
+        sock.close()
 
         # print("Data.outb has fully sent the data")
+    sel.unregister(sock)
 
 
 # main program: set up the host address and port; change them if you need to
 
 hostname = socket.gethostname()
 host = socket.gethostbyname(hostname) #IP address of the computer I'm on
-port = 12358    #Need to implement the command line port to go here
+port = 12350    #Need to implement the command line port to go here
 
 # set up the listening socket and register it with the SELECT mechanism
 
@@ -150,6 +160,7 @@ lsock.setblocking(False)
 sel.register(lsock, selectors.EVENT_READ, data=None)
 
 # the main event loop
+
 try:
     while True:
         events = sel.select(timeout=None)
