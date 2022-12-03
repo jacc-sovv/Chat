@@ -133,9 +133,24 @@ def service_connection(key, mask):
             #Sends out the file in chunks
             # sent = sock.sendall(data.outb)  # Should be ready to write
             # print(f"Chunk data should have length of {sent}")
-            sent = sock.send(data.outb)
-            data.outb = data.outb[sent:]
-            print(f"Chunk data sent : {sent}")
+            sent = sock.sendall(data.outb)
+            print(f"Was sendall a success? {sent}")
+            # while len(data.outb) > 0:
+            #     # try:
+            #     #     sent = sock.send(data.outb[:4096])
+            #     #     data.outb = data.outb[sent:]
+            #     #     print(f"Chunk data sent : {sent}")
+            #     #     print(f"Length of data outb is {len(data.outb)}")
+            #     # except:
+            #     #     print(".", end="")
+            #     sent = sock.send(data.outb[:4096])
+            #     data.outb = data.outb[sent:]
+            #     print(f"Chunk data sent : {sent}")
+            #     print(f"Length of data outb is {len(data.outb)}")
+            #     # if(sent < 4096):
+            #     #     print("Breaking...")
+            #     #     break
+
 
         sock.close()
 
@@ -147,7 +162,7 @@ def service_connection(key, mask):
 
 hostname = socket.gethostname()
 host = socket.gethostbyname(hostname) #IP address of the computer I'm on
-port = 12350    #Need to implement the command line port to go here
+port = 12354    #Need to implement the command line port to go here
 
 # set up the listening socket and register it with the SELECT mechanism
 
