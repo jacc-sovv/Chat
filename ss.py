@@ -173,6 +173,7 @@ port = 12351    #Need to implement the command line port to go here
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 sock.bind((host, port))
 sock.listen()
+print("listening on", (hostname, port), "ip address of ", host)
 conn, addr = sock.accept()
 
 recv_data = b''   # Should be ready to read
@@ -270,6 +271,7 @@ if recv_data:
 
 
     conn.close()
+sock.close()
 
 
             
