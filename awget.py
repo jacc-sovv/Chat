@@ -15,6 +15,9 @@ import random
 import sys
 import socket
 import pickle
+import os
+
+#URL of a pic of cam lookin cute :) https://alumni.colostate.edu/wp-content/uploads/sites/26/2022/01/cam_banner2.jpg
 
 url = None
 chain_file = "chaingang.txt"
@@ -65,7 +68,13 @@ while True:
         break
 
 print(f"length of the file is {len(full_data)}")
-f = open("test2.jpg", "wb")
+filename = os.popen('basename "' + url + '"').read()
+filename = filename.strip()
+
+if(filename == url):    #If there is no file name, then the name of the file should be index.html
+    filename = "index.html"
+    
+f = open(filename, "wb")
 f.write(full_data)
 f.close()
 
