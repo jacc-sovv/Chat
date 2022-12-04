@@ -39,9 +39,13 @@ else:
     except getopt.error as err:
         print (str(err))
 
-with open(chain_file) as file:
-    file.readline()
-    chain_list = [line.rstrip() for line in file]
+try:
+    with open(chain_file) as file:
+        file.readline()
+        chain_list = [line.rstrip() for line in file]
+except:
+    print("No chainfile provided and failed to locate chaingang.txt, exiting...")
+    sys.exit(2)
 
 #At this point, chain_list contains a list of strings, each one being a line in chain file
 print(f"{sys.argv[0]}:")
