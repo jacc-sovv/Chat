@@ -1,13 +1,13 @@
 ###############################################
-# Group Name  : XXXXXX
+# Group Name  : xXXXXx
 
-# Member1 Name: XXXXXX
-# Member1 SIS ID: XXXXXX
-# Member1 Login ID: XXXXXX
+# Member1 Name: John McFall
+# Member1 SIS ID: 832435619
+# Member1 Login ID: jmcf521
 
-# Member2 Name: XXXXXX
-# Member2 SIS ID: XXXXXX
-# Member2 Login ID: XXXXXX
+# Member2 Name: Jack Sovereign
+# Member2 SIS ID: 832430250
+# Member2 Login ID: jacc
 ###############################################
 
 #Need to accept a port from the command line
@@ -24,16 +24,16 @@ import threading
 
 #Gets the file and returns the file data
 def empty_list(url):
-    print("chainlist is empty")
+    
     #Issue wget request
     command = "wget " + url
-    print("command is ", command)
+    print(f"Request: {url}")
     filename = os.popen('basename "' + url + '"').read()
     filename = filename.strip()
 
     if(filename == url):    #If there is no file name, then the name of the file should be index.html
         filename = "index.html"
-
+    print("chainlist is empty")
     print(f"issuing wget for file {filename}")
     os.system(command)
 
@@ -48,6 +48,7 @@ def empty_list(url):
 
 #Returns data to be sent
 def full_list(chain_list, url):
+    print(f"Request: {url}")
     print("chainlist is")
     for x in chain_list:
         print(x)
@@ -55,6 +56,8 @@ def full_list(chain_list, url):
 
     ip = starting_point.split()[0]
     port = starting_point.split()[1]
+
+    print(f"Next SS is {ip}, port is {port}")
 
     #Stripy myself from the chainlist
     chain_list.remove(ip + " " + port)
@@ -68,6 +71,7 @@ def full_list(chain_list, url):
     s.sendall(chain_data)
     #Wait until you receive the file, then pass it back
     full_data = b''
+    print("waiting for file...")
 
     #While there is data to be received, receive it
     loop_count = 0
@@ -116,6 +120,7 @@ def deal_with_connection(conn):
                 if(not output_data):
                     break
         print("Goodbye!")
+        print("")
         conn.close()
 
 argumentList = sys.argv[1:]
@@ -131,11 +136,6 @@ try:
 except getopt.error as err:
     print (str(err))
 
-
-
-
-
-
 hostname = socket.gethostname()
 host = socket.gethostbyname(hostname) #IP address of the computer I'm on
 # set up the listening socket and register it with the SELECT mechanism
@@ -147,9 +147,3 @@ print("ss: listening on", (hostname, port), "ip address of ", host)
 while True:
     conn, addr = parent_sock.accept()
     threading.Thread(target=deal_with_connection, args=[conn]).start()
-
-
-
-
-
-            
