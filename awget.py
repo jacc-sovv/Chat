@@ -1,13 +1,13 @@
 ###############################################
-# Group Name  : XXXXXX
+# Group Name  : xXXXXx
 
-# Member1 Name: XXXXXX
-# Member1 SIS ID: XXXXXX
-# Member1 Login ID: XXXXXX
+# Member1 Name: John McFall
+# Member1 SIS ID: 832435619
+# Member1 Login ID: jmcf521
 
-# Member2 Name: XXXXXX
-# Member2 SIS ID: XXXXXX
-# Member2 Login ID: XXXXXX
+# Member2 Name: Jack Sovereign
+# Member2 SIS ID: 832430250
+# Member2 Login ID: jacc
 ###############################################
 
 
@@ -63,7 +63,7 @@ starting_point = random.choice(chain_list)
 ip = starting_point.split()[0]
 port = starting_point.split()[1]
 
-print(f"Next IP is {ip}, port is {port}")
+print(f"Next SS is {ip}, port is {port}")
 
 #Stripy first connection from chainlist
 chain_list.remove(ip + " " + port)
