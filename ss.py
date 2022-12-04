@@ -123,7 +123,7 @@ if recv_data:
                 break
         
         # print(f"All data received! Received {len(full_data)} bytes, looped through {loop_count} times")
-        # output_data += full_data
+        output_data += full_data
         # print(f"Length of data outb is {len(output_data)}")
 
     if output_data:
