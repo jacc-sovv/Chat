@@ -95,3 +95,4 @@ f.write(full_data)
 f.close()
 
 print("Goodbye")
+s.close()
